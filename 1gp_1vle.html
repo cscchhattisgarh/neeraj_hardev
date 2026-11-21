@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GP VLE Identification Form</title>
+  <!-- Bootstrap 5 & FontAwesome Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent-color: #059669;
+      --light-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 20px 30px -10px rgba(0, 0, 0, 0.12);
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f8fafc 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px 15px;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      color: var(--text-main);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(5, 150, 105, 0.04) 0%, transparent 50%);
+      animation: moveBackground 30s linear infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    @keyframes moveBackground {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(40px, 40px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: slideDownFade 0.8s ease-out;
+    }
+
+    .page-header h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .form-card {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 45px 50px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      animation: slideUpFade 0.8s ease-out 0.2s backwards;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #10b981 100%);
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 35px;
+      padding-bottom: 25px;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-header h3 {
+      color: var(--text-main);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      font-size: 1.85rem;
+      margin-bottom: 10px;
+    }
+
+    .form-header p {
+      color: var(--text-muted);
+      margin-bottom: 0;
+      font-weight: 500;
+    }
+
+    .form-header .icon-header {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 65px;
+      height: 65px;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-radius: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    .form-header .icon-header i {
+      color: white;
+      font-size: 28px;
+    }
+
+    .step-wizard {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 35px;
+      position: relative;
+      padding: 15px 0;
+      z-index: 1;
+    }
+
+    .step-wizard::before {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    .step-wizard-step {
+      position: relative;
+      z-index: 2;
+      background: var(--card-bg);
+      padding: 0 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .step-wizard-step.active {
+      color: var(--primary-color);
+      transform: translateY(-4px);
+    }
+
+    .step-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 800;
+      border: 2px solid #cbd5e1;
+      color: #64748b;
+      transition: all 0.3s ease;
+    }
+
+    .step-wizard-step.active .step-icon {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #fff;
+      border-color: #2563eb;
+      box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+    }
+
+    .form-step {
+      display: none;
+      animation: fadeIn 0.4s ease-in-out;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-step.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-label {
+      font-weight: 700;
+      color: #334155;
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-label::after {
+      content: '*';
+      color: #ef4444;
+    }
+
+    .form-control, .form-select {
+      border-radius: 10px;
+      padding: 12px 16px;
+      border: 1.5px solid #cbd5e1;
+      font-size: 0.95rem;
+      transition: all 0.25s ease;
+      background-color: #f8fafc;
+      color: var(--text-main);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+      outline: none;
+      color: var(--text-main);
+    }
+
+    .invalid-feedback {
+      color: #dc2626;
+      font-size: 0.82rem;
+      margin-top: 5px;
+      display: block;
+    }
+
+    .mb-3 { margin-bottom: 22px; }
+
+    .btn-custom {
+      padding: 12px 30px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .btn-primary.btn-custom {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary.btn-custom:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-success.btn-custom {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-success.btn-custom:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-outline-secondary.btn-custom {
+      border: 1.5px solid #cbd5e1;
+      color: #475569;
+      background: #f8fafc;
+    }
+
+    .btn-outline-secondary.btn-custom:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    #shgSection {
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    #shgSection h6 {
+      color: #166534;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .alert {
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .alert-danger {
+      background-color: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .modal-content {
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-icon-success { color: #10b981; font-size: 70px; }
+    .modal-icon-warning { color: #f59e0b; font-size: 70px; }
+    #modalMessage { color: #475569 !important; }
+
+    @media (max-width: 768px) {
+      .form-card { padding: 25px 20px; }
+      .d-flex { flex-direction: column; gap: 10px; }
+      .btn-custom { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1>GP VLE Identification</h1>
+    <p>Empower Your Rural Business - Complete Your Registration Today</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-header">
+      <div class="icon-header">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+      <h3>VLE Nomination Form</h3>
+      <p>स्थानीय निवासी का विवरण दर्ज करें।</p>
+    </div>
+
+    <div id="formWrapper">
+      <div class="step-wizard">
+        <div class="step-wizard-step active" id="wizardStep1">
+          <div class="step-icon">1</div>
+          <span>Location Info</span>
+        </div>
+        <div class="step-wizard-step" id="wizardStep2">
+          <div class="step-icon">2</div>
+          <span>Personal Info</span>
+        </div>
+      </div>
+
+      <div id="alertBox"></div>
+
+      <form id="vleForm" novalidate>
+        <!-- STEP 1: LOCATION MAPPING -->
+        <div class="form-step active" id="step1">
+          <div class="mb-3">
+            <label class="form-label">District</label>
+            <select id="district" class="form-select" onchange="onDistrictChange()" required>
+              <option value="">Loading Available Districts...</option>
+            </select>
+            <div class="invalid-feedback">Please select a District.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Block</label>
+            <select id="block" class="form-select" onchange="onBlockChange()" required disabled>
+              <option value="">Select District First</option>
+            </select>
+            <div class="invalid-feedback">Please select a Block.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Gram Panchayat</label>
+            <select id="gp" class="form-select" onchange="onGPChange()" required disabled>
+              <option value="">Select Block First</option>
+            </select>
+            <div class="invalid-feedback">Please select a Gram Panchayat.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Village</label>
+            <select id="village" class="form-select" required disabled>
+              <option value="">Select GP First</option>
+            </select>
+            <div class="invalid-feedback">Please select a Village.</div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="button" class="btn btn-primary btn-custom" onclick="goToStep2()">
+              Next Step <i class="fa-solid fa-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: PERSONAL DETAILS -->
+        <div class="form-step" id="step2">
+          <div class="mb-3">
+            <label class="form-label">Full Name (As per Aadhaar)</label>
+            <input type="text" id="name" class="form-control" placeholder="Enter full name" required>
+            <div class="invalid-feedback">Please enter your full name as per Aadhaar.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email ID (Linked with Aadhaar)</label>
+            <input type="email" id="email" class="form-control" placeholder="example@email.com" required>
+            <div class="invalid-feedback">Please enter a valid email address.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Mobile Number (Linked with Aadhaar)</label>
+            <input type="tel" id="mobile" class="form-control" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" required>
+            <div class="invalid-feedback">Please enter a valid 10-digit mobile number.</div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Computer Availability</label>
+              <select id="computer" class="form-select" required>
+                <option value="">Select Option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+              <div class="invalid-feedback">Please select computer availability.</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Gender</label>
+              <select id="gender" class="form-select" onchange="toggleSHGSection()" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="invalid-feedback">Please select your gender.</div>
+            </div>
+          </div>
+
+          <!-- Conditional SHG Fields -->
+          <div id="shgSection" style="display: none;">
+            <h6><i class="fa-solid fa-users me-2"></i>SHG Member Details</h6>
+            
+            <div class="mb-3">
+              <label class="form-label">Are you an SHG Member?</label>
+              <select id="shgMember" class="form-select" onchange="toggleSHGFields()">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+
+            <div id="shgFields" style="display: none;">
+              <div class="mb-3">
+                <label class="form-label">SHG Group Name</label>
+                <input type="text" id="shgName" class="form-control" placeholder="Enter group name">
+                <div class="invalid-feedback">Please enter SHG Group Name.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">SHG Group Code (11 Digits)</label>
+                <input type="text" id="shgCode" class="form-control" maxlength="11" pattern="[0-9]{11}" placeholder="11-digit SHG code">
+                <div class="invalid-feedback">Please enter a valid 11-digit SHG Group Code.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary btn-custom" onclick="goToStep1()">
+              <i class="fa-solid fa-arrow-left me-2"></i> Previous
+            </button>
+            <button type="submit" id="submitBtn" class="btn btn-success btn-custom">
+              <i class="fa-solid fa-paper-plane me-2"></i> Submit Application
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP MODAL -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4 text-center">
+      <div class="modal-body">
+        <div id="modalIconContainer" class="mb-3"></div>
+        <h3 id="modalTitle" class="fw-bold mb-3"></h3>
+        <p id="modalMessage" class="fs-5 mb-4"></p>
+        <button type="button" class="btn btn-success btn-custom px-5" data-bs-dismiss="modal" onclick="resetFormToStart()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWyXMh4F18bQwP2qCvmh6VjZUfEiNuzewkQ3Ut0IY1jVn1VNdSxa2nXs8NV23as1wkQ/exec";
+  let masterTree = {};
+
+  window.onload = function() {
+    loadDropdownData();
+  };
+
+  function loadDropdownData() {
+    fetch(SCRIPT_URL + "?action=getDropdownData")
+      .then(res => res.json())
+      .then(data => {
+        masterTree = data;
+        populateDistricts();
+      })
+      .catch(err => showAlert("Failed to load location data.", "danger"));
+  }
+
+  function populateDistricts() {
+    let distSelect = document.getElementById("district");
+    distSelect.innerHTML = '<option value="">Select District</option>';
+    if (Object.keys(masterTree).length === 0) {
+      distSelect.innerHTML = '<option value="">No vacant GPs available</option>';
+      return;
+    }
+    Object.keys(masterTree).forEach(dist => {
+      distSelect.innerHTML += `<option value="${dist}">${dist}</option>`;
+    });
+  }
+
+  function onDistrictChange() {
+    let dist = document.getElementById("district").value;
+    let blockSelect = document.getElementById("block");
+    let gpSelect = document.getElementById("gp");
+    let villSelect = document.getElementById("village");
+
+    blockSelect.innerHTML = '<option value="">Select Block</option>';
+    gpSelect.innerHTML = '<option value="">Select Block First</option>';
+    villSelect.innerHTML = '<option value="">Select GP First</option>';
+
+    if (dist && masterTree[dist]) {
+      blockSelect.disabled = false;
+      Object.keys(masterTree[dist].blocks).forEach(block => {
+        blockSelect.innerHTML += `<option value="${block}">${block}</option>`;
+      });
+    } else {
+      blockSelect.disabled = true;
+      gpSelect.disabled = true;
+      villSelect.disabled = true;
+    }
+  }
+
+  function onBlockChange() {
+    let dist = document.getElementById("district").value;
+    let block = document.getElementById("block").value;
+    let gpSelect = document.getElementById("gp");
+    let villSelect = document.getElementById("village");
+
+    gpSelect.innerHTML = '<option value="">Select GP</option>';
+    villSelect.innerHTML = '<option value="">Select GP First</option>';
+
+    if (dist && block && masterTree[dist].blocks[block]) {
+      gpSelect.disabled = false;
+      Object.keys(masterTree[dist].blocks[block].gps).forEach(gp => {
+        gpSelect.innerHTML += `<option value="${gp}">${gp}</option>`;
+      });
+    } else {
+      gpSelect.disabled = true;
+      villSelect.disabled = true;
+    }
+  }
+
+  function onGPChange() {
+    let dist = document.getElementById("district").value;
+    let block = document.getElementById("block").value;
+    let gp = document.getElementById("gp").value;
+    let villSelect = document.getElementById("village");
+
+    villSelect.innerHTML = '<option value="">Select Village</option>';
+
+    if (dist && block && gp && masterTree[dist].blocks[block].gps[gp]) {
+      villSelect.disabled = false;
+      let villages = masterTree[dist].blocks[block].gps[gp].villages;
+      Object.keys(villages).forEach(vill => {
+        villSelect.innerHTML += `<option value="${vill}">${vill}</option>`;
+      });
+    } else {
+      villSelect.disabled = true;
+    }
+  }
+
+  function toggleSHGSection() {
+    let gender = document.getElementById("gender").value;
+    let shgSec = document.getElementById("shgSection");
+    if (gender === "Female") {
+      shgSec.style.display = "block";
+    } else {
+      shgSec.style.display = "none";
+      document.getElementById("shgMember").value = "No";
+      toggleSHGFields();
+    }
+  }
+
+  function toggleSHGFields() {
+    let isSHG = document.getElementById("shgMember").value;
+    let shgFields = document.getElementById("shgFields");
+    let shgName = document.getElementById("shgName");
+    let shgCode = document.getElementById("shgCode");
+
+    if (isSHG === "Yes") {
+      shgFields.style.display = "block";
+      shgName.required = true;
+      shgCode.required = true;
+    } else {
+      shgFields.style.display = "none";
+      shgName.required = false;
+      shgCode.required = false;
+      shgName.value = "";
+      shgCode.value = "";
+    }
+  }
+
+  function goToStep2() {
+    let step1Container = document.getElementById("step1");
+    let inputs = step1Container.querySelectorAll("select");
+    let isValid = true;
+
+    inputs.forEach(input => {
+      if (!input.checkValidity()) {
+        isValid = false;
+        input.classList.add("is-invalid");
+      } else {
+        input.classList.remove("is-invalid");
+      }
+    });
+
+    if (!isValid) {
+      showAlert("Please select all location details (District, Block, GP, Village) before proceeding.", "danger");
+      return;
+    }
+
+    document.getElementById("alertBox").innerHTML = "";
+    document.getElementById("step1").classList.remove("active");
+    document.getElementById("step2").classList.add("active");
+    document.getElementById("wizardStep2").classList.add("active");
+  }
+
+  function goToStep1() {
+    document.getElementById("alertBox").innerHTML = "";
+    document.getElementById("step2").classList.remove("active");
+    document.getElementById("step1").classList.add("active");
+    document.getElementById("wizardStep2").classList.remove("active");
+  }
+
+  function resetFormToStart() {
+    document.getElementById("vleForm").reset();
+    document.getElementById("shgSection").style.display = "none";
+    goToStep1();
+    loadDropdownData();
+  }
+
+  document.getElementById("vleForm").onsubmit = function(e) {
+    e.preventDefault();
+
+    let step2Container = document.getElementById("step2");
+    let inputs = step2Container.querySelectorAll("input, select");
+    let isValid = true;
+
+    inputs.forEach(input => {
+      if (!input.checkValidity()) {
+        isValid = false;
+        input.classList.add("is-invalid");
+      } else {
+        input.classList.remove("is-invalid");
+      }
+    });
+
+    if (!isValid) {
+      showAlert("Please correct the errors in Step 2 personal details.", "danger");
+      return;
+    }
+
+    let submitBtn = document.getElementById("submitBtn");
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Submitting...`;
+
+    let dist = document.getElementById("district").value;
+    let block = document.getElementById("block").value;
+    let gp = document.getElementById("gp").value;
+    let vill = document.getElementById("village").value;
+
+    let payload = {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      mobile: document.getElementById("mobile").value,
+      computer: document.getElementById("computer").value,
+      gender: document.getElementById("gender").value,
+      shgMember: document.getElementById("shgMember").value,
+      shgName: document.getElementById("shgName").value,
+      shgCode: document.getElementById("shgCode").value,
+      
+      districtName: dist,
+      districtCode: masterTree[dist].code,
+      blockName: block,
+      blockCode: masterTree[dist].blocks[block].code,
+      gpName: gp,
+      gpCode: masterTree[dist].blocks[block].gps[gp].code,
+      villageName: vill,
+      villageCode: masterTree[dist].blocks[block].gps[gp].villages[vill]
+    };
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(res => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane me-2"></i> Submit Application`;
+      
+      if (res.status === "DUPLICATE") {
+        showPopUp("सूचना", res.message, "warning");
+      } else if (res.status === "LIMIT_EXCEEDED") {
+        showAlert(res.message, "danger");
+      } else if (res.status === "SUCCESS") {
+        showPopUp("सफलता!", "आपका आवेदन सफलतापूर्वक जमा कर दिया गया है।", "success");
+      } else {
+        showAlert("Error: " + res.message, "danger");
+      }
+    })
+    .catch(err => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane me-2"></i> Submit Application`;
+      showAlert("An error occurred during submission. Please try again.", "danger");
+    });
+  };
+
+  function showPopUp(title, message, type) {
+    document.getElementById("alertBox").innerHTML = "";
+    document.getElementById("modalTitle").innerText = title;
+    document.getElementById("modalMessage").innerText = message;
+    
+    let iconContainer = document.getElementById("modalIconContainer");
+    if (type === "warning") {
+      iconContainer.innerHTML = `<i class="fa-solid fa-triangle-exclamation modal-icon-warning"></i>`;
+      document.getElementById("modalTitle").style.color = "#d97706";
+    } else {
+      iconContainer.innerHTML = `<i class="fa-solid fa-circle-check modal-icon-success"></i>`;
+      document.getElementById("modalTitle").style.color = "#059669";
+    }
+
+    let modal = new bootstrap.Modal(document.getElementById('infoModal'));
+    modal.show();
+  }
+
+  function showAlert(msg, type) {
+    document.getElementById("alertBox").innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-${type === 'danger' ? 'circle-exclamation' : 'circle-check'} me-2"></i>
+        ${msg}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    `;
+  }
+</script>
+</body>
+</html>
