@@ -3,361 +3,869 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CSC Chhattisgarh - District PMS Portal (Target vs Achievement)</title>
+  <title>CSC Chhattisgarh - VLE & Micro ATM Mapping</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-    .table-container { max-height: 68vh; overflow: auto; }
-    thead th { position: sticky; top: 0; z-index: 10; }
-    thead tr:nth-child(2) th { top: 38px; }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printableReceipt, #printableReceipt * {
+        visibility: visible;
+      }
+      #printableReceipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
 </head>
-<body class="text-gray-800">
+<body class="bg-slate-100 min-h-screen py-6 px-3 font-sans">
 
-  <!-- Header -->
-  <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-3">
+  <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+    <!-- Header -->
+    <div class="bg-blue-800 text-white p-5 text-center">
+      <h1 class="text-xl font-bold tracking-wide">DIGIPAY MICRO ATM MAPPING PORTAL</h1>
+      <p class="text-xs text-blue-200 mt-1">CHHATTISGARH STATE OPERATIONS</p>
+    </div>
+
+    <!-- Loading Banner -->
+    <div id="loader" class="bg-amber-50 text-amber-800 text-sm p-3 text-center border-b border-amber-200">
+      Master Data load ho raha hai, kripya pratiksha karein...
+    </div>
+
+    <!-- Server / Duplicate Error Banner -->
+    <div id="serverErrorBanner" class="hidden bg-red-50 border-l-4 border-red-600 text-red-800 p-4 m-6 mb-0 rounded text-sm font-medium flex justify-between items-center">
+      <span id="serverErrorText"></span>
+      <button type="button" onclick="this.parentElement.classList.add('hidden')" class="text-red-600 font-bold ml-4">✕</button>
+    </div>
+
+    <!-- Form -->
+    <form id="vleForm" class="p-6 space-y-5 hidden" novalidate>
+      
+      <!-- 1. Location Type Selection -->
       <div>
-        <h1 class="text-xl md:text-2xl font-bold tracking-tight">CSC Chhattisgarh — District PMS Dashboard</h1>
-        <p class="text-xs md:text-sm text-blue-200">Business Activity Wise Target vs Achievement (Monthly, Quarterly, Half-Yearly & Annually)</p>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">LOCATION TYPE *</label>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="locationType" value="RURAL" checked onchange="toggleLocationType()" class="w-4 h-4 text-blue-600">
+            <span class="text-sm font-medium">RURAL (GRAMIN)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="locationType" value="URBAN" onchange="toggleLocationType()" class="w-4 h-4 text-blue-600">
+            <span class="text-sm font-medium">URBAN (SHAHRI)</span>
+          </label>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-semibold px-4 py-2 rounded-lg shadow transition">
-          Download CSV Report
+
+      <!-- 2. Cascading Location Dropdowns -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">DISTRICT *</label>
+          <select id="district" onchange="onDistrictChange(); validateField('district')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none"></select>
+          <p id="err_district" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">BLOCK *</label>
+          <select id="block" onchange="onBlockChange(); validateField('block')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none"></select>
+          <p id="err_block" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label id="level3Label" class="block text-xs font-semibold text-slate-600 mb-1">GRAM PANCHAYAT *</label>
+          <select id="level3" onchange="onLevel3Change(); validateField('level3')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none"></select>
+          <p id="err_level3" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label id="level4Label" class="block text-xs font-semibold text-slate-600 mb-1">VILLAGE *</label>
+          <select id="level4" onchange="validateField('level4')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none"></select>
+          <p id="err_level4" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+      </div>
+
+      <!-- 3. VLE Personal & KYC Details -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">VLE FIRST NAME * <span class="text-slate-400 font-normal">(ALPHABETS ONLY)</span></label>
+          <input type="text" id="firstName" maxlength="50" oninput="forceUpperAlphaSpace(this); validateField('firstName')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="FIRST NAME">
+          <p id="err_firstName" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">VLE LAST NAME * <span class="text-slate-400 font-normal">(NO SPACE ALLOWED)</span></label>
+          <input type="text" id="lastName" maxlength="50" onkeydown="if(event.key===' ') event.preventDefault();" oninput="forceUpperNoSpace(this); validateField('lastName')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="LASTNAME">
+          <p id="err_lastName" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">CSC ID (12 DIGITS) *</label>
+          <input type="text" id="cscId" maxlength="12" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,''); validateField('cscId')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none" placeholder="XXXXXXXX001X">
+          <p id="err_cscId" class="text-red-600 text-xs mt-1 hidden"></p>
+
+          <!-- DigiPay Lite ID Already Created Alert Box (Pure Hindi) -->
+          <div id="digipayLiteAlert" class="hidden mt-2 bg-amber-50 border-l-4 border-amber-500 p-3.5 rounded-r-lg text-amber-950 text-xs leading-relaxed shadow-sm">
+            <p class="font-bold text-amber-900 text-sm mb-1">⚠️ DIGIPAY LITE ID पहले से बनी हुई है!</p>
+            <p id="digipayLiteMsgText"></p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">PAN CARD NUMBER (INDIVIDUAL) *</label>
+          <input type="text" id="panCard" maxlength="10" oninput="forceUpperAlphaNumNoSpace(this); validateField('panCard')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="ABCPK1234F">
+          <p id="err_panCard" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">MOBILE NUMBER (10 DIGITS) *</label>
+          <input type="tel" id="mobile" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,''); validateField('mobile')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none" placeholder="9876543210">
+          <p id="err_mobile" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">EMAIL ID * <span class="text-slate-400 font-normal">(STANDARD DOMAINS ONLY)</span></label>
+          <input type="email" id="email" maxlength="100" oninput="forceLowerEmail(this); validateField('email')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm lowercase focus:outline-none" placeholder="example@gmail.com">
+          <p id="err_email" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+      </div>
+
+      <!-- 4. Shop & Address Details -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">VLE SHOP / CENTER NAME * <span class="text-slate-400 font-normal">(5–50 CHARS; NO . , / - ALLOWED)</span></label>
+          <input type="text" id="shopName" maxlength="50" oninput="forceUpperAlphaNumSpace(this); validateField('shopName')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="E.G. MAA SHARDA CSC CENTER">
+          <p id="err_shopName" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">COMPLETE ADDRESS * <span class="text-slate-400 font-normal">(5–200 CHARS; NO . , / - OR CHHATTISGARH ALLOWED)</span></label>
+          <input type="text" id="address" maxlength="200" oninput="forceUpperAlphaNumSpace(this); validateField('address')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="SHOP NO 12 MAIN ROAD NEAR BUS STAND">
+          <p id="err_address" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">AREA NAME * <span class="text-slate-400 font-normal">(3–30 CHARS; NO . , / - ALLOWED)</span></label>
+          <input type="text" id="areaName" maxlength="30" oninput="forceUpperAlphaNumSpace(this); validateField('areaName')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase focus:outline-none" placeholder="COLONY PARA SECTOR">
+          <p id="err_areaName" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">PIN CODE (6 DIGITS) *</label>
+          <input type="text" id="pinCode" maxlength="6" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,''); validateField('pinCode')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none" placeholder="492001">
+          <p id="err_pinCode" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+      </div>
+
+      <!-- 5. Micro ATM Section -->
+      <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-blue-900 mb-1">KYA AAPKE PAAS CSC KA MICRO ATM HAI? *</label>
+          <select id="hasMicroAtm" onchange="toggleMicroAtm(); validateField('hasMicroAtm')" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none">
+            <option value="">-- SELECT OPTION --</option>
+            <option value="YES">YES</option>
+            <option value="NO">NO</option>
+          </select>
+          <p id="err_hasMicroAtm" class="text-red-600 text-xs mt-1 hidden"></p>
+        </div>
+
+        <div id="atmDetailsDiv" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">MICRO ATM MODEL NUMBER *</label>
+            <select id="atmModel" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white uppercase focus:outline-none">
+              <option value="">-- SELECT MODEL --</option>
+              <option value="EUREKA-Y50">EUREKA-Y50</option>
+              <option value="PAX-D180">PAX-D180</option>
+              <option value="MOREFUN-MP63">MOREFUN-MP63</option>
+            </select>
+            <p id="err_atmModel" class="text-red-600 text-xs mt-1 hidden"></p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">MICRO ATM SERIAL NUMBER *</label>
+            <input type="text" id="serialNo" disabled oninput="validateSerialNumber()" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm uppercase bg-white disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none" placeholder="SELECT MODEL FIRST">
+            <p id="serialHint" class="text-slate-500 text-[11px] mt-1">Select a device model to see serial number format.</p>
+            <p id="err_serialNo" class="text-red-600 text-xs mt-1 hidden"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Auto-Captured GPS -->
+      <div class="bg-slate-50 p-3 rounded-lg border text-xs">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <span class="text-slate-500 block">LATITUDE (AUTO):</span>
+            <input type="text" id="lat" readonly class="font-mono font-bold text-slate-800 bg-transparent w-full outline-none" placeholder="FETCHING...">
+          </div>
+          <div>
+            <span class="text-slate-500 block">LONGITUDE (AUTO):</span>
+            <input type="text" id="lng" readonly class="font-mono font-bold text-slate-800 bg-transparent w-full outline-none" placeholder="FETCHING...">
+          </div>
+        </div>
+        <p id="err_gps" class="text-red-600 text-xs mt-1.5 hidden"></p>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" id="submitBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg shadow transition uppercase">
+        SUBMIT DETAILS
+      </button>
+    </form>
+
+    <!-- Success Printable Acknowledgment Slip with QR Code -->
+    <div id="receiptBox" class="p-6 hidden">
+      <div id="printableReceipt" class="bg-white border-2 border-slate-300 rounded-lg p-6 max-w-2xl mx-auto">
+        
+        <!-- Slip Header -->
+        <div class="border-b-2 border-blue-800 pb-4 mb-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+          <div>
+            <h2 class="text-lg font-extrabold text-blue-900 tracking-wide uppercase">CSC e-Governance Services India Limited</h2>
+            <p class="text-xs font-semibold text-slate-600 uppercase">Chhattisgarh State Operations — VLE & Micro ATM Acknowledgment Slip</p>
+          </div>
+          <div class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-300 uppercase">
+            ✓ VERIFIED & SUBMITTED
+          </div>
+        </div>
+
+        <!-- Ack No, Date & Auto-Generated QR Code Bar -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+          <div class="space-y-1.5 text-center sm:text-left">
+            <div>
+              <span class="text-slate-500 block uppercase">Acknowledgement Number:</span>
+              <span id="ackDisplay" class="text-base font-mono font-extrabold text-blue-900"></span>
+            </div>
+            <div>
+              <span class="text-slate-500 block uppercase">Submission Date & Time:</span>
+              <span id="recTimestamp" class="font-semibold text-slate-800"></span>
+            </div>
+          </div>
+
+          <!-- Auto-Generated QR Code Container -->
+          <div class="flex flex-col items-center bg-white p-2 rounded border border-slate-300 shadow-xs">
+            <div id="receiptQrCode"></div>
+            <span class="text-[9px] font-mono text-slate-500 mt-1 uppercase">SCAN TO VERIFY</span>
+          </div>
+        </div>
+
+        <!-- VLE Details Summary Table -->
+        <table class="w-full text-xs border-collapse border border-slate-300 mb-4">
+          <tbody>
+            <tr class="bg-slate-50">
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 w-1/3 uppercase">CSC ID</td>
+              <td id="recCscId" class="border border-slate-300 p-2 font-mono font-bold text-slate-900"></td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">VLE Full Name</td>
+              <td id="recVleName" class="border border-slate-300 p-2 font-bold text-slate-900 uppercase"></td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">PAN Card / Mobile</td>
+              <td id="recPanMobile" class="border border-slate-300 p-2 font-mono text-slate-900 uppercase"></td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">Email ID</td>
+              <td id="recEmail" class="border border-slate-300 p-2 text-slate-900 lowercase"></td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">Shop / Center Name</td>
+              <td id="recShopName" class="border border-slate-300 p-2 font-bold text-slate-900 uppercase"></td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">Location & Mapping</td>
+              <td id="recLocation" class="border border-slate-300 p-2 text-slate-900 uppercase"></td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">Complete Address & PIN</td>
+              <td id="recAddress" class="border border-slate-300 p-2 text-slate-900 uppercase"></td>
+            </tr>
+            <tr>
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">CSC Micro ATM Status</td>
+              <td id="recAtmDetails" class="border border-slate-300 p-2 font-bold text-blue-900 uppercase"></td>
+            </tr>
+            <tr class="bg-slate-50">
+              <td class="border border-slate-300 p-2 font-semibold text-slate-600 uppercase">GPS Coordinates</td>
+              <td class="border border-slate-300 p-2 font-mono text-slate-900">
+                <span id="recGps"></span>
+                <a id="mapAnchor" href="#" target="_blank" class="ml-2 text-blue-600 underline no-print uppercase">[Open Map]</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Footer Note -->
+        <div class="text-[11px] text-slate-500 border-t border-slate-200 pt-3 flex justify-between items-center">
+          <span>* This is a system-generated acknowledgment slip for CSC Chhattisgarh State Operations.</span>
+          <span class="font-semibold text-slate-700">CSC SPV CHHATTISGARH</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Hidden during Print) -->
+      <div class="mt-5 flex flex-wrap justify-center gap-3 no-print">
+        <button type="button" onclick="window.print()" class="bg-green-700 hover:bg-green-800 text-white font-semibold text-xs px-5 py-2.5 rounded-lg shadow flex items-center gap-2 uppercase transition">
+          🖨️ PRINT / SAVE PDF ACKNOWLEDGMENT SLIP
+        </button>
+        <button type="button" onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs px-5 py-2.5 rounded-lg shadow uppercase transition">
+          + NEW ENTRY
         </button>
       </div>
     </div>
-  </header>
+  </div>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 py-6">
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1t8qlw-iAp0Z4-MTrs6aotvZVnQNrJVw00N7j9R3SCfDF3eKO2ukjqW9AaYMaX6Nm/exec"; // Yahan apna Web App URL dalein
+  let masterData = { rural: [], urban: [] };
+  let existingSerialSet = new Set();
+  let digipayLiteMap = {}; // { "CSC_ID": "DIGIPAY_LITE_ID" }
 
-    <!-- Filters Card -->
-    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <!-- District Filter -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">1. Select District</label>
-          <select id="districtFilter" onchange="onFilterChange()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="ALL">ALL DISTRICTS (STATE TOTAL)</option>
-          </select>
-        </div>
+  const modelEl = document.getElementById('atmModel');
+  const serialEl = document.getElementById('serialNo');
+  const serialError = document.getElementById('err_serialNo');
+  const serialHint = document.getElementById('serialHint');
 
-        <!-- Vertical Filter -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">2. Select Vertical</label>
-          <select id="verticalFilter" onchange="renderDashboard()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="ALL">ALL VERTICALS</option>
-          </select>
-        </div>
+  const ALLOWED_EMAIL_DOMAINS = [
+    'gmail.com', 'yahoo.com', 'yahoo.co.in', 'yahoo.in',
+    'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+    'rediffmail.com', 'icloud.com', 'proton.me', 'protonmail.com',
+    'csc.gov.in', 'gov.in', 'nic.in'
+  ];
 
-        <!-- Period Type Filter -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">3. Period Category</label>
-          <select id="periodCategory" onchange="updatePeriodOptions()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="MONTHLY">Monthly</option>
-            <option value="QUARTERLY">Quarterly</option>
-            <option value="HALFYEARLY">Half-Yearly</option>
-            <option value="ANNUALLY" selected>Annually (Yearly)</option>
-          </select>
-        </div>
+  function forceUpperAlphaSpace(el) {
+    el.value = el.value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
+  }
 
-        <!-- Specific Period Filter -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">4. Select Period</label>
-          <select id="periodSelect" onchange="renderDashboard()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium bg-blue-50 border-blue-300 text-blue-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="YEARLY">YEARLY</option>
-          </select>
-        </div>
+  function forceUpperNoSpace(el) {
+    el.value = el.value.replace(/[^A-Za-z]/g, '').toUpperCase();
+  }
 
-      </div>
-    </div>
+  function forceUpperAlphaNumNoSpace(el) {
+    el.value = el.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  }
 
-    <!-- Summary KPI Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <!-- TXN Card -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-600">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-gray-500 uppercase">Transactions (TXN)</span>
-          <span id="kpiTxnPct" class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">0%</span>
-        </div>
-        <div class="mt-2 flex justify-between items-baseline">
-          <div>
-            <p class="text-xs text-gray-400">Achievement</p>
-            <p id="kpiTxnAch" class="text-lg font-bold text-gray-900">0</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-400">Target</p>
-            <p id="kpiTxnTgt" class="text-sm font-semibold text-gray-600">0</p>
-          </div>
-        </div>
-      </div>
+  function forceUpperAlphaNumSpace(el) {
+    el.value = el.value.replace(/[^A-Za-z0-9\s]/g, '').toUpperCase();
+  }
 
-      <!-- AMT Card -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-600">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-gray-500 uppercase">Amount (AMT in ₹)</span>
-          <span id="kpiAmtPct" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">0%</span>
-        </div>
-        <div class="mt-2 flex justify-between items-baseline">
-          <div>
-            <p class="text-xs text-gray-400">Achievement</p>
-            <p id="kpiAmtAch" class="text-lg font-bold text-gray-900">0</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-400">Target</p>
-            <p id="kpiAmtTgt" class="text-sm font-semibold text-gray-600">0</p>
-          </div>
-        </div>
-      </div>
+  function forceLowerEmail(el) {
+    el.value = el.value.replace(/\s+/g, '').toLowerCase();
+  }
 
-      <!-- REV Card -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-600">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-gray-500 uppercase">Revenue (REV in ₹)</span>
-          <span id="kpiRevPct" class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">0%</span>
-        </div>
-        <div class="mt-2 flex justify-between items-baseline">
-          <div>
-            <p class="text-xs text-gray-400">Achievement</p>
-            <p id="kpiRevAch" class="text-lg font-bold text-gray-900">0</p>
-          </div>
-          <div class="text-right">
-            <p class="text-xs text-gray-400">Target</p>
-            <p id="kpiRevTgt" class="text-sm font-semibold text-gray-600">0</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search Box -->
-    <div class="mb-3 flex justify-between items-center">
-      <input type="text" id="searchInput" onkeyup="renderDashboard()" placeholder="Search Business Activity..." class="w-full md:w-80 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-      <span id="rowCount" class="text-xs font-medium text-gray-500 ml-3">Loading data...</span>
-    </div>
-
-    <!-- Data Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div id="loader" class="p-10 text-center text-gray-500 font-medium">
-        Fetching live data from Google Sheet... Please wait.
-      </div>
-      <div class="table-container hidden" id="tableWrapper">
-        <table class="w-full text-xs text-left border-collapse" id="pmsTable">
-          <thead>
-            <tr class="bg-gray-800 text-white">
-              <th rowspan="2" class="px-3 py-2 border border-gray-700">S.No</th>
-              <th rowspan="2" class="px-3 py-2 border border-gray-700">Vertical</th>
-              <th rowspan="2" class="px-3 py-2 border border-gray-700 min-w-[220px]">Business Activity</th>
-              <th colspan="3" class="px-3 py-2 border border-gray-700 text-center bg-blue-900">TARGET</th>
-              <th colspan="3" class="px-3 py-2 border border-gray-700 text-center bg-emerald-900">ACHIEVEMENT</th>
-              <th colspan="3" class="px-3 py-2 border border-gray-700 text-center bg-amber-900">% ACHIEVED</th>
-            </tr>
-            <tr class="bg-gray-700 text-gray-100">
-              <th class="px-2 py-1.5 border border-gray-600 text-right">TXN</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">AMT</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">REV</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">TXN</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">AMT</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">REV</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">TXN %</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">AMT %</th>
-              <th class="px-2 py-1.5 border border-gray-600 text-right">REV %</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody" class="divide-y divide-gray-200"></tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <script>
-    // APNA DEPLOYED WEB APP URL YAHAN PASTE KAREIN
-    const API_URL = "https://script.google.com/macros/s/AKfycbyg2DZmEefG91hl2Yhlrqh2AA1tuaQP0z8nFfBfYNXrkf8hWwibvs6OrGmybSnsO1o8ng/exec";
-
-    let rawData = [];
-    let currentFilteredRows = [];
-
-    const periodOptionsMap = {
-      "MONTHLY": ["APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER", "JANUARY", "FEBRUARY", "MARCH"],
-      "QUARTERLY": ["QUARTER 1", "QUARTER 2", "QUARTER 3", "QUARTER 4"],
-      "HALFYEARLY": ["HALF YEARLY 1 (APR-SEP)", "HALF YEARLY 2 (OCT-MAR)"],
-      "ANNUALLY": ["YEARLY"]
-    };
-
-    window.onload = async () => {
-      updatePeriodOptions();
-      try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
-        if (json.status === "success") {
-          rawData = json.data;
-          populateDropdowns();
-          document.getElementById("loader").classList.add("hidden");
-          document.getElementById("tableWrapper").classList.remove("hidden");
-          renderDashboard();
-        } else {
-          document.getElementById("loader").innerText = "Error: " + json.message;
-        }
-      } catch (e) {
-        document.getElementById("loader").innerText = "Failed to load data. Check Web App URL & Permissions.";
+  window.onload = async () => {
+    captureGPS();
+    try {
+      const res = await fetch(`${SCRIPT_URL}?action=getMaster`);
+      const json = await res.json();
+      masterData.rural = json.rural;
+      masterData.urban = json.urban;
+      if (Array.isArray(json.existingSerials)) {
+        existingSerialSet = new Set(json.existingSerials.map(s => String(s).trim().toUpperCase()));
       }
+      if (json.digipayLiteMap && typeof json.digipayLiteMap === 'object') {
+        digipayLiteMap = json.digipayLiteMap;
+      }
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('vleForm').classList.remove('hidden');
+      populateDistricts();
+    } catch (e) {
+      document.getElementById('loader').innerText = "Master Data load karne mein error aaya. URL check karein.";
+    }
+  };
+
+  function captureGPS() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('lng').value = pos.coords.longitude.toFixed(6);
+          clearError('gps');
+        },
+        err => {
+          setError('gps', 'Location access blocked hai. Kripya browser/mobile settings se GPS location allow karein.');
+        }
+      );
+    } else {
+      setError('gps', 'Aapka browser GPS location support nahi karta.');
+    }
+  }
+
+  function getLocationType() {
+    return document.querySelector('input[name="locationType"]:checked').value;
+  }
+
+  function getActiveRows() {
+    return getLocationType() === 'RURAL' ? masterData.rural : masterData.urban;
+  }
+
+  function toggleLocationType() {
+    const isRural = getLocationType() === 'RURAL';
+    document.getElementById('level3Label').innerText = isRural ? "GRAM PANCHAYAT *" : "CITY NAME *";
+    document.getElementById('level4Label').innerText = isRural ? "VILLAGE *" : "WARD NAME & NUMBER *";
+    populateDistricts();
+    ['district', 'block', 'level3', 'level4'].forEach(clearError);
+  }
+
+  function fillSelect(selectId, items, placeholder) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = `<option value="">${placeholder.toUpperCase()}</option>`;
+    items.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.code.toUpperCase();
+      opt.text = item.name.toUpperCase();
+      sel.appendChild(opt);
+    });
+  }
+
+  function populateDistricts() {
+    const rows = getActiveRows();
+    const map = new Map();
+    rows.forEach(r => { if (r[2]) map.set(String(r[2]).trim(), String(r[1]).trim()); });
+    fillSelect('district', Array.from(map, ([code, name]) => ({ code, name })), '-- SELECT DISTRICT --');
+    document.getElementById('block').innerHTML = '';
+    document.getElementById('level3').innerHTML = '';
+    document.getElementById('level4').innerHTML = '';
+  }
+
+  function onDistrictChange() {
+    const distCode = document.getElementById('district').value;
+    const rows = getActiveRows();
+    const map = new Map();
+    rows.filter(r => String(r[2]).trim().toUpperCase() === distCode)
+        .forEach(r => { if (r[4]) map.set(String(r[4]).trim(), String(r[3]).trim()); });
+    fillSelect('block', Array.from(map, ([code, name]) => ({ code, name })), '-- SELECT BLOCK --');
+    document.getElementById('level3').innerHTML = '';
+    document.getElementById('level4').innerHTML = '';
+  }
+
+  function onBlockChange() {
+    const distCode = document.getElementById('district').value;
+    const blkCode = document.getElementById('block').value;
+    const rows = getActiveRows();
+    const map = new Map();
+    rows.filter(r => String(r[2]).trim().toUpperCase() === distCode && String(r[4]).trim().toUpperCase() === blkCode)
+        .forEach(r => { if (r[6]) map.set(String(r[6]).trim(), String(r[5]).trim()); });
+    const placeholder = getLocationType() === 'RURAL' ? '-- SELECT GRAM PANCHAYAT --' : '-- SELECT CITY --';
+    fillSelect('level3', Array.from(map, ([code, name]) => ({ code, name })), placeholder);
+    document.getElementById('level4').innerHTML = '';
+  }
+
+  function onLevel3Change() {
+    const distCode = document.getElementById('district').value;
+    const blkCode = document.getElementById('block').value;
+    const l3Code = document.getElementById('level3').value;
+    const rows = getActiveRows();
+    const map = new Map();
+    rows.filter(r => String(r[2]).trim().toUpperCase() === distCode && String(r[4]).trim().toUpperCase() === blkCode && String(r[6]).trim().toUpperCase() === l3Code)
+        .forEach(r => { if (r[8]) map.set(String(r[8]).trim(), String(r[7]).trim()); });
+    const placeholder = getLocationType() === 'RURAL' ? '-- SELECT VILLAGE --' : '-- SELECT WARD --';
+    fillSelect('level4', Array.from(map, ([code, name]) => ({ code, name })), placeholder);
+  }
+
+  function toggleMicroAtm() {
+    const hasAtm = document.getElementById('hasMicroAtm').value === 'YES';
+    document.getElementById('atmDetailsDiv').classList.toggle('hidden', !hasAtm);
+    if (!hasAtm) {
+      modelEl.value = '';
+      serialEl.value = '';
+      serialEl.disabled = true;
+      serialEl.placeholder = 'SELECT MODEL FIRST';
+      serialHint.textContent = 'Select a device model to see serial number format.';
+      clearError('atmModel');
+      clearError('serialNo');
+    }
+  }
+
+  // Model change hone par input box aur maxLength set karein
+  modelEl.addEventListener('change', () => {
+    const model = modelEl.value;
+    serialEl.value = '';
+    serialError.classList.add('hidden');
+    serialEl.classList.remove('border-red-500', 'bg-red-50', 'bg-red-50/30');
+    validateField('atmModel');
+
+    if (!model) {
+      serialEl.disabled = true;
+      serialEl.placeholder = 'SELECT MODEL FIRST';
+      serialHint.textContent = 'Select a device model to see serial number format.';
+      return;
+    }
+
+    serialEl.disabled = false;
+
+    if (model === 'PAX-D180') {
+      serialEl.maxLength = 8;
+      serialEl.inputMode = 'text';
+      serialEl.placeholder = 'E.G. 1A234567';
+      serialHint.textContent = '8 chars: 1st digit (1-9), 2nd letter (A-Z), next 6 digits (0-9).';
+    } else if (model === 'MOREFUN-MP63') {
+      serialEl.maxLength = 14;
+      serialEl.inputMode = 'numeric';
+      serialEl.placeholder = '14 DIGITS ONLY';
+      serialHint.textContent = 'Exactly 14 numeric digits only.';
+    } else if (model === 'EUREKA-Y50') {
+      serialEl.maxLength = 20;
+      serialEl.inputMode = 'numeric';
+      serialEl.placeholder = '20 DIGITS ONLY';
+      serialHint.textContent = 'Exactly 20 numeric digits only.';
+    }
+  });
+
+  // Live typing validation + Duplicate Check for Serial Number
+  function validateSerialNumber() {
+    if (document.getElementById('hasMicroAtm').value !== 'YES') {
+      clearError('serialNo');
+      return true;
+    }
+
+    const model = modelEl.value;
+    if (!model) {
+      serialError.textContent = 'Please select Micro ATM Model Number first.';
+      serialError.classList.remove('hidden');
+      serialEl.classList.add('border-red-500', 'bg-red-50');
+      return false;
+    }
+
+    if (model === 'MOREFUN-MP63' || model === 'EUREKA-Y50') {
+      serialEl.value = serialEl.value.replace(/\D/g, '');
+    } else {
+      serialEl.value = serialEl.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    const val = serialEl.value;
+
+    if (val && existingSerialSet.has(val)) {
+      serialError.textContent = `Duplicate Blocked: Serial Number (${val}) pehle se register ho chuka hai!`;
+      serialError.classList.remove('hidden');
+      serialEl.classList.add('border-red-500', 'bg-red-50');
+      return false;
+    }
+
+    let isValid = false;
+    let errMsg = '';
+
+    if (model === 'PAX-D180') {
+      isValid = /^[1-9][A-Z][0-9]{6}$/.test(val);
+      errMsg = 'Invalid PAX-D180 Serial! 8 chars: 1st digit (1-9), 2nd letter (A-Z), 6 digits.';
+    } else if (model === 'MOREFUN-MP63') {
+      isValid = /^[0-9]{14}$/.test(val);
+      errMsg = 'Invalid MOREFUN-MP63 Serial! Must be exactly 14 numeric digits.';
+    } else if (model === 'EUREKA-Y50') {
+      isValid = /^[0-9]{20}$/.test(val);
+      errMsg = 'Invalid EUREKA-Y50 Serial! Must be exactly 20 numeric digits.';
+    }
+
+    if (!isValid) {
+      serialError.textContent = errMsg;
+      serialError.classList.remove('hidden');
+      serialEl.classList.add('border-red-500', 'bg-red-50');
+    } else {
+      serialError.classList.add('hidden');
+      serialEl.classList.remove('border-red-500', 'bg-red-50');
+    }
+    return isValid;
+  }
+
+  // DigiPay Lite ID Already Created Display Helper (Pure Hindi)
+  function showDigipayLiteNotice(liteId) {
+    const alertBox = document.getElementById('digipayLiteAlert');
+    const msgEl = document.getElementById('digipayLiteMsgText');
+    const cscInput = document.getElementById('cscId');
+    
+    msgEl.innerHTML = `आपकी DigiPay Lite ID पहले से बन गई है, जो कि <span class="font-mono font-bold text-blue-900 bg-white px-1.5 py-0.5 rounded border border-amber-300">"${liteId}"</span> है। कृपया <a href="https://digipaylite.in/" target="_blank" class="text-blue-700 font-bold underline">https://digipaylite.in/</a> पर जाकर <strong>Forgot Password</strong> करें। आपको मोबाइल पर प्राप्त OTP सत्यापन के बाद टेक्स्ट मैसेज (SMS) के माध्यम से नया पासवर्ड मिल जाएगा।`;
+    alertBox.classList.remove('hidden');
+    cscInput.classList.remove('border-slate-300');
+    cscInput.classList.add('border-amber-500', 'bg-amber-50/40');
+  }
+
+  function hideDigipayLiteNotice() {
+    const alertBox = document.getElementById('digipayLiteAlert');
+    const cscInput = document.getElementById('cscId');
+    alertBox.classList.add('hidden');
+    cscInput.classList.remove('border-amber-500', 'bg-amber-50/40');
+  }
+
+  // Inline Error Helpers
+  function setError(fieldId, message) {
+    const errEl = document.getElementById(`err_${fieldId}`);
+    const inputEl = document.getElementById(fieldId);
+    if (errEl) {
+      errEl.innerText = message;
+      errEl.classList.remove('hidden');
+    }
+    if (inputEl && fieldId !== 'gps') {
+      inputEl.classList.remove('border-slate-300');
+      inputEl.classList.add('border-red-500', 'bg-red-50/30');
+    }
+    return false;
+  }
+
+  function clearError(fieldId) {
+    const errEl = document.getElementById(`err_${fieldId}`);
+    const inputEl = document.getElementById(fieldId);
+    if (errEl) {
+      errEl.innerText = '';
+      errEl.classList.add('hidden');
+    }
+    if (inputEl && fieldId !== 'gps') {
+      inputEl.classList.remove('border-red-500', 'bg-red-50/30', 'bg-red-50');
+      inputEl.classList.add('border-slate-300');
+    }
+    return true;
+  }
+
+  // Live Single-Field Validator
+  function validateField(fieldId) {
+    if (fieldId === 'serialNo') return validateSerialNumber();
+
+    const el = document.getElementById(fieldId);
+    if (!el && fieldId !== 'gps') return true;
+    const val = el ? el.value.trim() : '';
+
+    switch (fieldId) {
+      case 'district':
+        return val ? clearError('district') : setError('district', 'Please select District.');
+      case 'block':
+        return val ? clearError('block') : setError('block', 'Please select Block.');
+      case 'level3':
+        return val ? clearError('level3') : setError('level3', getLocationType() === 'RURAL' ? 'Please select Gram Panchayat.' : 'Please select City Name.');
+      case 'level4':
+        return val ? clearError('level4') : setError('level4', getLocationType() === 'RURAL' ? 'Please select Village.' : 'Please select Ward Name & Number.');
+      
+      case 'firstName': {
+        const clean = val.replace(/\s+/g, ' ').toUpperCase();
+        return (/^[A-Z]+(?:\s[A-Z]+)*$/.test(clean) && clean.length >= 2 && clean.length <= 50)
+          ? clearError('firstName')
+          : setError('firstName', 'VLE First Name is invalid. Only alphabets and single spaces allowed (2–50 chars).');
+      }
+      case 'lastName': {
+        const clean = val.toUpperCase();
+        return /^[A-Z]{2,50}$/.test(clean)
+          ? clearError('lastName')
+          : setError('lastName', 'VLE Last Name is invalid. Only alphabets allowed, spaces are not allowed (2–50 chars).');
+      }
+      case 'cscId': {
+        hideDigipayLiteNotice();
+        if (!/^\d{8}001\d$/.test(val)) {
+          return setError('cscId', "Enter valid 12-digit CSC ID (9th-10th digit '0' & 11th digit '1').");
+        }
+        clearError('cscId');
+        // Check if CSC ID exists in "DIGIPAY LITE ID CREATED LIST" (Col B -> Col E)
+        if (digipayLiteMap[val]) {
+          showDigipayLiteNotice(digipayLiteMap[val]);
+          return false;
+        }
+        return true;
+      }
+      
+      case 'panCard':
+        return /^[A-Z]{3}P[A-Z][0-9]{4}[A-Z]$/.test(val.toUpperCase())
+          ? clearError('panCard')
+          : setError('panCard', "Invalid PAN Card. 4th character must be 'P' (e.g., ABCPK1234F).");
+      
+      case 'mobile':
+        return /^[6-9]\d{9}$/.test(val)
+          ? clearError('mobile')
+          : setError('mobile', 'Enter 10 digit valid mobileNo');
+      
+      case 'email': {
+        const lower = val.toLowerCase();
+        const parts = lower.split('@');
+        const isValidDomain = parts.length === 2 &&
+          /^[a-z0-9._%+-]+$/.test(parts[0]) &&
+          ALLOWED_EMAIL_DOMAINS.includes(parts[1]);
+        return (isValidDomain && lower.length >= 6 && lower.length <= 100)
+          ? clearError('email')
+          : setError('email', 'Invalid Email ID. Only standard domains (@gmail.com, @yahoo.com, @outlook.com, @rediffmail.com, @csc.gov.in, etc.) are allowed.');
+      }
+      
+      case 'shopName': {
+        const clean = val.replace(/\s+/g, ' ').toUpperCase();
+        return /^[A-Z0-9\s]{5,50}$/.test(clean)
+          ? clearError('shopName')
+          : setError('shopName', 'Shop name is invalid. Length must be 5–50 chars; only letters, numbers and spaces allowed (no . , / -).');
+      }
+      
+      case 'address': {
+        const clean = val.replace(/\s+/g, ' ').toUpperCase();
+        if (!/^[A-Z0-9\s]{5,200}$/.test(clean)) {
+          return setError('address', 'Invalid address. Length must be 5–200 chars; only letters, numbers and spaces allowed (no . , / -).');
+        }
+        if (/\b(CHHATTISGARH|CHATTISGARH|CHHATISGARH|CG)\b/.test(clean)) {
+          return setError('address', 'Complete Address mein CHHATTISGARH ya CG type karna allow nahi hai.');
+        }
+        return clearError('address');
+      }
+      
+      case 'areaName': {
+        const clean = val.replace(/\s+/g, ' ').toUpperCase();
+        return /^[A-Z0-9\s]{3,30}$/.test(clean)
+          ? clearError('areaName')
+          : setError('areaName', 'Area name is invalid. Length must be 3–30 chars; only letters, numbers and spaces allowed (no . , / -).');
+      }
+      
+      case 'pinCode':
+        return /^[1-9][0-9]{5}$/.test(val)
+          ? clearError('pinCode')
+          : setError('pinCode', 'Enter valid pincode. Length should be 6 characters.');
+      
+      case 'hasMicroAtm':
+        return val ? clearError('hasMicroAtm') : setError('hasMicroAtm', 'Please select YES or NO.');
+      
+      case 'atmModel':
+        if (document.getElementById('hasMicroAtm').value !== 'YES') return clearError('atmModel');
+        return val ? clearError('atmModel') : setError('atmModel', 'Please select Micro ATM Model Number.');
+      
+      case 'gps':
+        const lat = document.getElementById('lat').value.trim();
+        if (!lat) {
+          captureGPS();
+          return setError('gps', 'GPS Coordinates capture nahi hue hain. Location permission allow karein.');
+        }
+        return clearError('gps');
+    }
+    return true;
+  }
+
+  function validateAllFields() {
+    const fields = [
+      'district', 'block', 'level3', 'level4',
+      'firstName', 'lastName', 'cscId', 'panCard',
+      'mobile', 'email', 'shopName', 'address',
+      'areaName', 'pinCode', 'hasMicroAtm', 'atmModel', 'serialNo', 'gps'
+    ];
+    let firstInvalidId = null;
+
+    fields.forEach(id => {
+      const isValid = validateField(id);
+      if (!isValid && !firstInvalidId) {
+        firstInvalidId = id;
+      }
+    });
+
+    if (firstInvalidId) {
+      const targetEl = firstInvalidId === 'gps' ? document.getElementById('lat') : document.getElementById(firstInvalidId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (firstInvalidId !== 'gps') targetEl.focus();
+      }
+      return false;
+    }
+    return true;
+  }
+
+  document.getElementById('vleForm').onsubmit = async (e) => {
+    e.preventDefault();
+    document.getElementById('serverErrorBanner').classList.add('hidden');
+    
+    if (!validateAllFields()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = "VALIDATING & SAVING...";
+
+    const getText = (id) => {
+      const el = document.getElementById(id);
+      return (el.options[el.selectedIndex]?.text || '').toUpperCase();
     };
 
-    function populateDropdowns() {
-      const districts = [...new Set(rawData.map(r => r.district))].sort();
-      const distSelect = document.getElementById("districtFilter");
-      districts.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d;
-        opt.textContent = d;
-        distSelect.appendChild(opt);
+    const payload = {
+      locationType: getLocationType().toUpperCase(),
+      districtCode: document.getElementById('district').value.toUpperCase(),
+      districtName: getText('district'),
+      blockCode: document.getElementById('block').value.toUpperCase(),
+      blockName: getText('block'),
+      level3Code: document.getElementById('level3').value.toUpperCase(),
+      level3Name: getText('level3'),
+      level4Code: document.getElementById('level4').value.toUpperCase(),
+      level4Name: getText('level4'),
+      firstName: document.getElementById('firstName').value.trim().replace(/\s+/g, ' ').toUpperCase(),
+      lastName: document.getElementById('lastName').value.trim().replace(/\s+/g, '').toUpperCase(),
+      cscId: document.getElementById('cscId').value.trim(),
+      panCard: document.getElementById('panCard').value.trim().toUpperCase(),
+      mobile: document.getElementById('mobile').value.trim(),
+      email: document.getElementById('email').value.trim().toLowerCase(),
+      address: document.getElementById('address').value.trim().replace(/\s+/g, ' ').toUpperCase(),
+      areaName: document.getElementById('areaName').value.trim().replace(/\s+/g, ' ').toUpperCase(),
+      pinCode: document.getElementById('pinCode').value.trim(),
+      shopName: document.getElementById('shopName').value.trim().replace(/\s+/g, ' ').toUpperCase(),
+      hasMicroAtm: document.getElementById('hasMicroAtm').value.toUpperCase(),
+      atmModel: document.getElementById('atmModel').value.toUpperCase(),
+      serialNo: document.getElementById('serialNo').value.trim().toUpperCase(),
+      lat: document.getElementById('lat').value,
+      lng: document.getElementById('lng').value
+    };
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
       });
+      const result = await res.json();
 
-      const verticals = [...new Set(rawData.map(r => r.vertical))].sort();
-      const vertSelect = document.getElementById("verticalFilter");
-      verticals.forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v;
-        vertSelect.appendChild(opt);
-      });
-    }
-
-    function updatePeriodOptions() {
-      const cat = document.getElementById("periodCategory").value;
-      const periodSelect = document.getElementById("periodSelect");
-      periodSelect.innerHTML = "";
-      periodOptionsMap[cat].forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p;
-        opt.textContent = p;
-        periodSelect.appendChild(opt);
-      });
-      renderDashboard();
-    }
-
-    function onFilterChange() {
-      renderDashboard();
-    }
-
-    // Bina decimal ke round-up formatting
-    function formatNum(n) {
-      const rounded = Math.ceil(Number(n || 0));
-      return rounded.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-    }
-
-    // Percentage bhi bina decimal ke round-up
-    function calcPct(ach, tgt) {
-      if (!tgt || tgt === 0) return ach > 0 ? "100%" : "0%";
-      return Math.ceil((ach / tgt) * 100) + "%";
-    }
-
-    function getBadgeColor(ach, tgt) {
-      if (!tgt || tgt === 0) return "text-gray-500";
-      const pct = Math.ceil((ach / tgt) * 100);
-      if (pct >= 100) return "text-emerald-700 font-bold bg-emerald-50";
-      if (pct >= 75) return "text-amber-700 font-semibold bg-amber-50";
-      return "text-red-600 font-semibold bg-red-50";
-    }
-
-    function renderDashboard() {
-      const selectedDist = document.getElementById("districtFilter").value;
-      const selectedVert = document.getElementById("verticalFilter").value;
-      const selectedPeriod = document.getElementById("periodSelect").value;
-      const searchQuery = document.getElementById("searchInput").value.toLowerCase();
-
-      let filtered = rawData.filter(r => {
-        const matchDist = (selectedDist === "ALL") || (r.district === selectedDist);
-        const matchVert = (selectedVert === "ALL") || (r.vertical === selectedVert);
-        const matchSearch = r.activity.toLowerCase().includes(searchQuery) || r.vertical.toLowerCase().includes(searchQuery);
-        return matchDist && matchVert && matchSearch;
-      });
-
-      const aggregatedMap = new Map();
-      filtered.forEach(item => {
-        const key = item.vertical + "||" + item.activity;
-        const m = item.metrics[selectedPeriod];
-        if (!aggregatedMap.has(key)) {
-          aggregatedMap.set(key, {
-            vertical: item.vertical,
-            activity: item.activity,
-            t_txn: 0, t_amt: 0, t_rev: 0,
-            a_txn: 0, a_amt: 0, a_rev: 0
-          });
+      if (result.status === 'success') {
+        if (payload.hasMicroAtm === 'YES' && payload.serialNo) {
+          existingSerialSet.add(payload.serialNo);
         }
-        const entry = aggregatedMap.get(key);
-        entry.t_txn += Math.ceil(m.t_txn);
-        entry.t_amt += Math.ceil(m.t_amt);
-        entry.t_rev += Math.ceil(m.t_rev);
-        entry.a_txn += Math.ceil(m.a_txn);
-        entry.a_amt += Math.ceil(m.a_amt);
-        entry.a_rev += Math.ceil(m.a_rev);
-      });
 
-      currentFilteredRows = Array.from(aggregatedMap.values());
+        // Populate Printable Receipt Data
+        document.getElementById('ackDisplay').innerText = result.ackNo.toUpperCase();
+        document.getElementById('recTimestamp').innerText = new Date().toLocaleString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+        }).toUpperCase();
+        document.getElementById('recCscId').innerText = payload.cscId;
+        document.getElementById('recVleName').innerText = `${payload.firstName} ${payload.lastName}`;
+        document.getElementById('recPanMobile').innerText = `${payload.panCard}  |  ${payload.mobile}`;
+        document.getElementById('recEmail').innerText = payload.email;
+        document.getElementById('recShopName').innerText = payload.shopName;
+        document.getElementById('recLocation').innerText = `[${payload.locationType}] ${payload.districtName} > ${payload.blockName} > ${payload.level3Name} > ${payload.level4Name}`;
+        document.getElementById('recAddress').innerText = `${payload.address}, ${payload.areaName} - ${payload.pinCode}`;
+        document.getElementById('recAtmDetails').innerText = payload.hasMicroAtm === 'YES'
+          ? `YES — MODEL: ${payload.atmModel} | SERIAL: ${payload.serialNo}`
+          : 'NO (MICRO ATM NOT AVAILABLE)';
+        document.getElementById('recGps').innerText = `${payload.lat}, ${payload.lng}`;
+        document.getElementById('mapAnchor').href = result.mapLink;
 
-      let totT_Txn = 0, totT_Amt = 0, totT_Rev = 0;
-      let totA_Txn = 0, totA_Amt = 0, totA_Rev = 0;
+        // Generate QR Code with ACK No, CSC ID, VLE Name & Serial No
+        const qrContainer = document.getElementById('receiptQrCode');
+        qrContainer.innerHTML = '';
+        const qrText = [
+          `ACK: ${result.ackNo.toUpperCase()}`,
+          `CSC ID: ${payload.cscId}`,
+          `NAME: ${payload.firstName} ${payload.lastName}`,
+          `ATM: ${payload.hasMicroAtm === 'YES' ? payload.serialNo : 'NO'}`
+        ].join(' | ');
 
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = "";
+        new QRCode(qrContainer, {
+          text: qrText,
+          width: 78,
+          height: 78,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
 
-      currentFilteredRows.forEach((row, idx) => {
-        totT_Txn += row.t_txn; totT_Amt += row.t_amt; totT_Rev += row.t_rev;
-        totA_Txn += row.a_txn; totA_Amt += row.a_amt; totA_Rev += row.a_rev;
+        document.getElementById('vleForm').classList.add('hidden');
+        document.getElementById('receiptBox').classList.remove('hidden');
+        document.getElementById('receiptBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (result.status === 'digipay_exists') {
+        showDigipayLiteNotice(result.liteId);
+        document.getElementById('cscId').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.disabled = false;
+        btn.innerText = "SUBMIT DETAILS";
+      } else {
+        const msg = result.message || "Submission failed.";
+        if (msg.includes("CSC ID")) setError('cscId', msg);
+        else if (msg.includes("PAN Card")) setError('panCard', msg);
+        else if (msg.includes("Serial")) setError('serialNo', msg);
+        else if (msg.includes("CHHATTISGARH")) setError('address', msg);
+        
+        document.getElementById('serverErrorText').innerText = msg;
+        document.getElementById('serverErrorBanner').classList.remove('hidden');
+        document.getElementById('serverErrorBanner').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-blue-50/50 transition";
-        tr.innerHTML = `
-          <td class="px-3 py-2 border border-gray-200 text-gray-500">${idx + 1}</td>
-          <td class="px-3 py-2 border border-gray-200 font-medium text-indigo-800">${row.vertical}</td>
-          <td class="px-3 py-2 border border-gray-200 font-semibold text-gray-900">${row.activity}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right">${formatNum(row.t_txn)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right">${formatNum(row.t_amt)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right">${formatNum(row.t_rev)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right font-semibold text-blue-900">${formatNum(row.a_txn)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right font-semibold text-blue-900">${formatNum(row.a_amt)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right font-semibold text-blue-900">${formatNum(row.a_rev)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right ${getBadgeColor(row.a_txn, row.t_txn)}">${calcPct(row.a_txn, row.t_txn)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right ${getBadgeColor(row.a_amt, row.t_amt)}">${calcPct(row.a_amt, row.t_amt)}</td>
-          <td class="px-2 py-2 border border-gray-200 text-right ${getBadgeColor(row.a_rev, row.t_rev)}">${calcPct(row.a_rev, row.t_rev)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById("kpiTxnAch").innerText = formatNum(totA_Txn);
-      document.getElementById("kpiTxnTgt").innerText = formatNum(totT_Txn);
-      document.getElementById("kpiTxnPct").innerText = calcPct(totA_Txn, totT_Txn);
-
-      document.getElementById("kpiAmtAch").innerText = "₹ " + formatNum(totA_Amt);
-      document.getElementById("kpiAmtTgt").innerText = "₹ " + formatNum(totT_Amt);
-      document.getElementById("kpiAmtPct").innerText = calcPct(totA_Amt, totT_Amt);
-
-      document.getElementById("kpiRevAch").innerText = "₹ " + formatNum(totA_Rev);
-      document.getElementById("kpiRevTgt").innerText = "₹ " + formatNum(totT_Rev);
-      document.getElementById("kpiRevPct").innerText = calcPct(totA_Rev, totT_Rev);
-
-      document.getElementById("rowCount").innerText = `Showing ${currentFilteredRows.length} activities (${selectedPeriod})`;
+        btn.disabled = false;
+        btn.innerText = "SUBMIT DETAILS";
+      }
+    } catch (err) {
+      document.getElementById('serverErrorText').innerText = "Network Error! Internet connection check karke dobara koshish karein.";
+      document.getElementById('serverErrorBanner').classList.remove('hidden');
+      btn.disabled = false;
+      btn.innerText = "SUBMIT DETAILS";
     }
-
-    function exportToCSV() {
-      const dist = document.getElementById("districtFilter").value;
-      const period = document.getElementById("periodSelect").value;
-      let csv = `District,Vertical,Business Activity,Period,Target TXN,Target AMT,Target REV,Achievement TXN,Achievement AMT,Achievement REV,TXN %,AMT %,REV %\n`;
-
-      currentFilteredRows.forEach(r => {
-        csv += `"${dist}","${r.vertical}","${r.activity}","${period}",${Math.ceil(r.t_txn)},${Math.ceil(r.t_amt)},${Math.ceil(r.t_rev)},${Math.ceil(r.a_txn)},${Math.ceil(r.a_amt)},${Math.ceil(r.a_rev)},"${calcPct(r.a_txn, r.t_txn)}","${calcPct(r.a_amt, r.t_amt)}","${calcPct(r.a_rev, r.t_rev)}"\n`;
-      });
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `PMS_${dist}_${period}.csv`;
-      link.click();
-    }
-  </script>
+  };
+</script>
 </body>
 </html>
